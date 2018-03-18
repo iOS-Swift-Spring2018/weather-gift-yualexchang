@@ -4,7 +4,6 @@
 //
 //  Created by Yu Chang on 3/13/18.
 //  Copyright © 2018 ISclass. All rights reserved.
-//
 
 import UIKit
 
