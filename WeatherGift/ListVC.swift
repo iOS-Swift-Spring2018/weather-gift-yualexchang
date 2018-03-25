@@ -6,10 +6,11 @@
 //  Copyright © 2018 ISclass. All rights reserved.
 
 import UIKit
+import GooglePlaces
 
 class ListVC: UIViewController {
     
-    var locationsArray = [String]()
+    var locationsArray = [WeatherLocation]()
     var currentPage = 0
 
     @IBOutlet weak var tableView: UITableView!
@@ -31,6 +32,14 @@ class ListVC: UIViewController {
             destination.locationsArray = locationsArray
         }
     }
+    
+    @IBAction func addBarButtonPressed(_ sender: UIBarButtonItem) {
+        let autocompleteController = GMSAutocompleteViewController()
+        autocompleteController.delegate = self
+        present(autocompleteController, animated: true, completion: nil)
+    }
+    
+    
     @IBAction func editBarButtonPressed(_ sender: UIBarButtonItem) {
         if tableView.isEditing == true {
             tableView.setEditing(false, animated: true)
@@ -52,7 +61,7 @@ extension ListVC: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "LocationCell", for: indexPath)
-        cell.textLabel?.text = locationsArray[indexPath.row]
+        cell.textLabel?.text = locationsArray[indexPath.row].name
         return cell
     }
     
@@ -81,5 +90,50 @@ extension ListVC: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, targetIndexPathForMoveFromRowAt sourceIndexPath: IndexPath, toProposedIndexPath proposedDestinationIndexPath: IndexPath) -> IndexPath {
         return (proposedDestinationIndexPath.row == 0 ? sourceIndexPath : proposedDestinationIndexPath)
     }
+    
+    func updateTable (place: GMSPlace) {
+        let newIndexPath = IndexPath(row: locationsArray.count, section: 0)
+        var newLocation = WeatherLocation()
+        newLocation.name = place.name
+        let longitude = place.coordinate.longitude
+        let latitude = place.coordinate.latitude
+        newLocation.coordinates = "\(latitude),\(longitude)"
+        print(newLocation.coordinates)
+        locationsArray.append(newLocation)
+        tableView.insertRows(at: [newIndexPath], with: .automatic)
+    }
+}
+
+
+extension ListVC: GMSAutocompleteViewControllerDelegate {
+    
+    // Handle the user's selection.
+    func viewController(_ viewController: GMSAutocompleteViewController, didAutocompleteWith place: GMSPlace) {
+        print("Place name: \(place.name)")
+        print("Place address: \(place.formattedAddress)")
+        print("Place attributions: \(place.attributions)")
+        dismiss(animated: true, completion: nil)
+        updateTable(place: place)
+    }
+    
+    func viewController(_ viewController: GMSAutocompleteViewController, didFailAutocompleteWithError error: Error) {
+        // TODO: handle the error.
+        print("Error: ", error.localizedDescription)
+    }
+    
+    // User canceled the operation.
+    func wasCancelled(_ viewController: GMSAutocompleteViewController) {
+        dismiss(animated: true, completion: nil)
+    }
+    
+    // Turn the network activity indicator on and off again.
+    func didRequestAutocompletePredictions(_ viewController: GMSAutocompleteViewController) {
+        UIApplication.shared.isNetworkActivityIndicatorVisible = true
+    }
+    
+    func didUpdateAutocompletePredictions(_ viewController: GMSAutocompleteViewController) {
+        UIApplication.shared.isNetworkActivityIndicatorVisible = false
+    }
+    
 }
 
