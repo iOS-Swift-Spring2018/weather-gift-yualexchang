@@ -33,6 +33,15 @@ class ListVC: UIViewController {
         }
     }
     
+    func saveLocations() {
+        let encoder = JSONEncoder()
+        if let encoded = try? encoder.encode(locationsArray) {
+            UserDefaults.standard.set(encoded, forKey: "locationsArray")
+        } else {
+            print("ERROR: Saving encoded did not work.")
+        }
+    }
+    
     @IBAction func addBarButtonPressed(_ sender: UIBarButtonItem) {
         let autocompleteController = GMSAutocompleteViewController()
         autocompleteController.delegate = self
@@ -69,6 +78,7 @@ extension ListVC: UITableViewDataSource, UITableViewDelegate {
         if editingStyle == .delete {
             locationsArray.remove(at: indexPath.row)
             tableView.deleteRows(at: [indexPath], with: .fade)
+            saveLocations()
         }
     }
     
@@ -76,6 +86,7 @@ extension ListVC: UITableViewDataSource, UITableViewDelegate {
         let itemToMove = locationsArray[sourceIndexPath.row]
         locationsArray.remove(at: sourceIndexPath.row)
         locationsArray.insert(itemToMove, at: destinationIndexPath.row)
+        saveLocations()
     }
     
     //MARK:- tableView method to freeze the first cell
@@ -93,14 +104,13 @@ extension ListVC: UITableViewDataSource, UITableViewDelegate {
     
     func updateTable (place: GMSPlace) {
         let newIndexPath = IndexPath(row: locationsArray.count, section: 0)
-        var newLocation = WeatherLocation()
-        newLocation.name = place.name
         let longitude = place.coordinate.longitude
         let latitude = place.coordinate.latitude
-        newLocation.coordinates = "\(latitude),\(longitude)"
-        print(newLocation.coordinates)
-        locationsArray.append(newLocation)
+        let newCoordinates = "\(latitude),\(longitude)"
+        let newWeatherLocation = WeatherLocation(name: place.name, coordinates: newCoordinates)
+        locationsArray.append(newWeatherLocation)
         tableView.insertRows(at: [newIndexPath], with: .automatic)
+        saveLocations()
     }
 }
 
